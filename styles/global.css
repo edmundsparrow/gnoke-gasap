@@ -1,1 +1,48 @@
+/* Reverting Gnoke Gas Flame Orange to Original Blue */
+:root {
+  /* Core Brand Colors */
+  --flame: #2563eb !important;             /* Primary Blue (Original) */
+  --flame-dim: rgba(37, 99, 235, 0.09) !important;  /* Light Blue tint */
+  --flame-glow: rgba(37, 99, 235, 0.18) !important; /* Blue glow for interactive states */
+  
+  /* Background subtle adjustment if needed */
+  --bg: #f8fafc !important;                /* Cleaner white-blue background */
+}
+
+/* Specific component overrides for elements that use hardcoded orange values */
+
+/* Today's badge in History */
+.today-badge {
+  background: var(--flame-dim) !important;
+  color: var(--flame) !important;
+  border-color: rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Loader ring */
+.loader-ring {
+  border-top-color: var(--flame) !important;
+}
+
+/* Navigation active indicator */
+.bottom-nav a.active::before {
+  background: var(--flame) !important;
+}
+
+/* Saving indicator */
+.save-indicator.saving .save-dot {
+  background: var(--flame) !important;
+}
+
+/* Price inputs focusing */
+.unit-price-input:focus, 
+.field input:focus, 
+.field textarea:focus {
+  border-color: var(--flame) !important;
+}
+
+/* Contact link values */
+.contact-link .cl-val {
+  color: var(--flame) !important;
+}
+
 
