@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Gnoke Gas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #fff8f3;
+      --text:    #1c1210;
+      --muted:   #a8a29e;
+      --flame:   #ea580c;
+      --border:  #f0e8e2;
+      --surface: #ffffff;
+    }
+
+    html, body {
+      width: 100%; height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* Background image — very faint */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .bg-layer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center bottom;
+      opacity: 0.07;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 28px 36px;
+    }
+
+    /* Top */
+    .top {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      opacity: 0;
+      animation: up 0.5s ease 0.1s forwards;
+    }
+    .gnoke {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--flame);
+    }
+    .app-name {
+      font-size: 2.4rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    /* Middle */
+    .mid {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      opacity: 0;
+      animation: up 0.5s ease 0.25s forwards;
+    }
+    .desc {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 300px;
+    }
+    .desc strong { color: var(--text); font-weight: 600; }
+
+    .pillars { display: flex; gap: 8px; }
+    .pillar {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .pillar-icon { font-size: 1.1rem; line-height: 1; }
+    .pillar-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Bottom */
+    .bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      opacity: 0;
+      animation: up 0.5s ease 0.4s forwards;
+    }
+    .enter-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 16px;
+      background: var(--flame);
+      color: #ffffff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .enter-btn:active { opacity: 0.88; transform: scale(0.98); }
+    .enter-btn .arrow { transition: transform 0.2s; }
+    .enter-btn:hover .arrow { transform: translateX(4px); }
+
+    .skip-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .skip-row input {
+      width: 15px; height: 15px;
+      accent-color: var(--flame);
+      cursor: pointer;
+    }
+    .skip-row label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Version */
+    .version {
+      position: absolute;
+      top: 50px;
+      right: 28px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      opacity: 0;
+      animation: up 0.5s ease 0.1s forwards;
+    }
+
+    body.out { animation: fadeOut 0.28s ease forwards; }
+    @keyframes fadeOut { to { opacity: 0; } }
+    @keyframes up {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+   <link rel="stylesheet" href="styles/global.css"> 
+
+</head>
+<body>
+
+<div class="bg-layer">
+  <img src="assets/bg2.webp" alt="" aria-hidden="true" />
+</div>
+
+<span class="version">v1.0</span>
+
+<div class="page">
+
+  <div class="top">
+    <span class="gnoke">Gnoke</span>
+    <span class="app-name">Gas</span>
+  </div>
+
+  <div class="mid">
+    <p class="desc">
+      Daily sales tracking and records
+      for <strong>gas retailers.</strong>
+      Works offline. No account needed.
+    </p>
+    <div class="pillars">
+      <div class="pillar">
+        <span class="pillar-icon">⚖️</span>
+        <span class="pillar-label">Sales</span>
+      </div>
+      <div class="pillar">
+        <span class="pillar-icon">📊</span>
+        <span class="pillar-label">History</span>
+      </div>
+      <div class="pillar">
+        <span class="pillar-icon">💾</span>
+        <span class="pillar-label">Backup</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <a class="enter-btn" href="sales.html" onclick="go(event)">
+      Start Selling <span class="arrow">→</span>
+    </a>
+    <div class="skip-row">
+      <input type="checkbox" id="skip" />
+      <label for="skip">Don't show again</label>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const KEY = 'gnoke_gas_skip_intro';
+if (localStorage.getItem(KEY) === '1') {
+  window.location.replace('sales.html');
+}
+
+function go(e) {
+  e.preventDefault();
+  if (document.getElementById('skip').checked) {
+    localStorage.setItem(KEY, '1');
+  }
+  document.body.classList.add('out');
+  setTimeout(() => window.location.href = 'sales.html', 280);
+}
+</script>
+</body>
+</html>

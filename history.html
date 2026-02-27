@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>History — Gnoke Gas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#f7f6f2; --surface:#ffffff; --surface2:#f0ede8; --border:#e2ddd8;
+      --text:#1c1917; --muted:#a8a29e; --flame:#ea580c;
+      --flame-dim:rgba(234,88,12,0.09); --success:#16a34a;
+      --danger:#dc2626; --danger-dim:rgba(220,38,38,0.09);
+      --radius:6px; --nav-h:60px;
+      --font-mono:'DM Mono',monospace; --font-sans:'DM Sans',sans-serif;
+    }
+    html { font-size:15px; }
+    body { font-family:var(--font-sans); background:var(--bg); color:var(--text);
+           min-height:100dvh; padding-bottom:calc(var(--nav-h) + 12px);
+           -webkit-font-smoothing:antialiased; }
+
+    .page-header { position:sticky; top:0; z-index:20; background:var(--flame);
+      padding:12px 16px; display:flex; align-items:center; justify-content:space-between; }
+    .page-header h1 { font-family:var(--font-mono); font-size:0.82rem; font-weight:500;
+      letter-spacing:0.14em; text-transform:uppercase; color:#fff; }
+    .header-right { font-family:var(--font-mono); font-size:0.72rem;
+      color:rgba(255,255,255,0.75); letter-spacing:0.04em; }
+
+    .stats-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+      background:var(--border); border-bottom:1px solid var(--border); }
+    .stat-cell { background:var(--surface); padding:12px; }
+    .stat-label { font-family:var(--font-mono); font-size:0.58rem; letter-spacing:0.1em;
+      text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+    .stat-value { font-family:var(--font-mono); font-size:0.95rem; font-weight:500; color:var(--flame); }
+    .stat-value.green { color:var(--success); }
+
+    .search-bar { padding:10px 12px; background:var(--surface);
+      border-bottom:1px solid var(--border); display:flex; gap:8px; }
+    .search-bar input { flex:1; background:var(--surface2); border:1px solid var(--border);
+      border-radius:var(--radius); color:var(--text); font-family:var(--font-sans);
+      font-size:0.82rem; padding:8px 10px; outline:none; transition:border-color 0.15s; }
+    .search-bar input::placeholder { color:var(--muted); }
+    .search-bar input:focus { border-color:var(--flame); }
+
+    button { font-family:var(--font-sans); font-size:0.78rem; font-weight:600;
+      letter-spacing:0.03em; border:none; border-radius:var(--radius);
+      padding:8px 14px; cursor:pointer; transition:opacity 0.15s,transform 0.1s; }
+    button:active { transform:scale(0.97); }
+    .btn-ghost { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+    .btn-ghost:hover { color:var(--text); }
+
+    .day-list { padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+
+    .day-card { background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius); overflow:hidden; cursor:pointer; transition:border-color 0.15s; }
+    .day-card:hover { border-color:var(--flame); }
+    .day-card.expanded { border-color:var(--flame); }
+
+    .dc-head { display:flex; align-items:center; justify-content:space-between;
+      padding:11px 14px; gap:10px; }
+    .dc-head-left { display:flex; flex-direction:column; gap:3px; min-width:0; }
+    .dc-date { font-size:0.9rem; font-weight:600; }
+    .dc-meta { font-family:var(--font-mono); font-size:0.65rem;
+      color:var(--muted); letter-spacing:0.03em; }
+    .dc-head-right { display:flex; flex-direction:column; align-items:flex-end;
+      gap:4px; flex-shrink:0; }
+    .dc-revenue { font-family:var(--font-mono); font-size:0.88rem;
+      font-weight:500; color:var(--success); }
+    .dc-kg-badge { font-family:var(--font-mono); font-size:0.65rem; color:var(--muted);
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:3px; padding:2px 7px; }
+    .dc-chevron { color:var(--muted); font-size:0.7rem; transition:transform 0.2s;
+      margin-left:2px; flex-shrink:0; }
+    .day-card.expanded .dc-chevron { transform:rotate(180deg); }
+
+    .today-badge { font-family:var(--font-mono); font-size:0.55rem; letter-spacing:0.08em;
+      text-transform:uppercase; background:var(--flame-dim); color:var(--flame);
+      border:1px solid rgba(234,88,12,0.2); border-radius:3px;
+      padding:2px 6px; margin-left:6px; vertical-align:middle; }
+
+    .dc-detail { display:none; border-top:1px solid var(--border);
+      animation:fadeIn 0.15s ease; }
+    .day-card.expanded .dc-detail { display:block; }
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(-4px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .dc-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+      background:var(--border); border-bottom:1px solid var(--border); }
+    .dc-sum-cell { background:var(--surface2); padding:9px 12px; }
+    .sum-label { font-family:var(--font-mono); font-size:0.57rem; letter-spacing:0.1em;
+      text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+    .sum-val { font-family:var(--font-mono); font-size:0.82rem; font-weight:500; }
+    .sum-val.flame   { color:var(--flame); }
+    .sum-val.green   { color:var(--success); }
+    .sum-val.default { color:var(--text); }
+
+    .dc-sales { border-bottom:1px solid var(--border); }
+    .dc-sale-row { display:grid; grid-template-columns:28px 60px 90px 1fr;
+      align-items:center; gap:8px; padding:7px 14px;
+      border-bottom:1px solid var(--border); font-size:0.8rem; }
+    .dc-sale-row:last-child { border-bottom:none; }
+    .dc-sale-row .sn  { font-family:var(--font-mono); font-size:0.62rem;
+      color:var(--muted); text-align:center; }
+    .dc-sale-row .kg  { font-family:var(--font-mono); font-size:0.78rem; }
+    .dc-sale-row .pr  { font-family:var(--font-mono); font-size:0.78rem; color:var(--success); }
+    .dc-sale-row .cmt { font-size:0.78rem; color:var(--muted); overflow:hidden;
+      text-overflow:ellipsis; white-space:nowrap; }
+
+    .dc-actions { display:flex; align-items:center; justify-content:space-between;
+      padding:8px 14px; }
+    .dc-unit-price { font-family:var(--font-mono); font-size:0.65rem; color:var(--muted); }
+    .btn-sm { font-size:0.72rem; padding:5px 10px; }
+    .btn-del { background:var(--danger-dim); color:var(--danger);
+      border:1px solid rgba(220,38,38,0.2); }
+
+    .total-footer { position:sticky; bottom:var(--nav-h); background:var(--surface);
+      border-top:1px solid var(--border); padding:10px 14px;
+      display:flex; align-items:center; justify-content:space-between; z-index:9; }
+    .total-footer .tf-label { font-family:var(--font-mono); font-size:0.65rem;
+      letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
+    .total-footer .tf-val { font-family:var(--font-mono); font-size:1rem;
+      font-weight:500; color:var(--success); }
+
+    .empty-state { margin:50px 12px; text-align:center; color:var(--muted); }
+    .empty-state .icon { font-size:2.2rem; margin-bottom:10px; opacity:0.4; }
+    .empty-state p { font-family:var(--font-mono); font-size:0.7rem; letter-spacing:0.08em; }
+
+    #toast { position:fixed; bottom:calc(var(--nav-h) + 12px); left:50%;
+      transform:translateX(-50%) translateY(20px); background:var(--surface);
+      border:1px solid var(--border); border-radius:var(--radius); padding:9px 18px;
+      font-size:0.8rem; color:var(--text); box-shadow:0 4px 20px rgba(0,0,0,0.08);
+      opacity:0; transition:opacity 0.2s,transform 0.2s;
+      pointer-events:none; white-space:nowrap; z-index:100; }
+    #toast.show    { opacity:1; transform:translateX(-50%) translateY(0); }
+    #toast.success { border-color:var(--success); color:var(--success); }
+    #toast.error   { border-color:var(--danger);  color:var(--danger); }
+
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; height:var(--nav-h);
+      background:var(--surface); border-top:1px solid var(--border);
+      display:flex; align-items:stretch; z-index:20; }
+    .bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center;
+      justify-content:center; text-decoration:none; gap:3px;
+      font-family:var(--font-mono); font-size:0.6rem; letter-spacing:0.08em;
+      text-transform:uppercase; color:var(--muted); transition:color 0.15s; position:relative; }
+    .bottom-nav a .nav-icon { font-size:1.1rem; line-height:1; }
+    .bottom-nav a:hover  { color:var(--text); }
+    .bottom-nav a.active { color:var(--flame); }
+    .bottom-nav a.active::before { content:''; position:absolute; top:0;
+      left:20%; right:20%; height:2px; background:var(--flame);
+      border-radius:0 0 3px 3px; }
+
+    #db-loader { position:fixed; inset:0; background:var(--bg); display:flex;
+      flex-direction:column; align-items:center; justify-content:center;
+      gap:14px; z-index:200; transition:opacity 0.3s; }
+    #db-loader.hidden { opacity:0; pointer-events:none; }
+    .loader-ring { width:34px; height:34px; border:2px solid var(--border);
+      border-top-color:var(--flame); border-radius:50%;
+      animation:spin 0.7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    #db-loader p { font-family:var(--font-mono); font-size:0.7rem;
+      color:var(--muted); letter-spacing:0.1em; }
+  </style>
+   <link rel="stylesheet" href="styles/global.css"> 
+
+</head>
+<body>
+
+<div id="db-loader"><div class="loader-ring"></div><p>LOADING...</p></div>
+
+<header class="page-header">
+  <h1>History</h1>
+  <span class="header-right" id="recordCount">— records</span>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-cell">
+    <div class="stat-label">Days</div>
+    <div class="stat-value" id="statDays">—</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">KG Sold</div>
+    <div class="stat-value" id="statKg">—</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Revenue</div>
+    <div class="stat-value green" id="statRevenue">—</div>
+  </div>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search date or comments…" />
+  <button class="btn-ghost" onclick="clearSearch()">Reset</button>
+</div>
+
+<div class="day-list" id="dayList"></div>
+<div class="empty-state" id="emptyState" style="display:none">
+  <div class="icon">📊</div>
+  <p>NO RECORDS YET</p>
+</div>
+
+<div class="total-footer" id="totalFooter" style="display:none">
+  <span class="tf-label">Total Revenue</span>
+  <span class="tf-val" id="totalRevenue">₦0</span>
+</div>
+
+<div id="toast"></div>
+
+<nav class="bottom-nav">
+  <a href="sales.html"><span class="nav-icon">🛒</span>Sales</a>
+  <a href="history.html" class="active"><span class="nav-icon">◷</span>History</a>
+  <a href="help.html"><span class="nav-icon">⚙</span>Help</a>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<script src="scripts/db-core.js"></script>
+<script src="scripts/db-sales.js"></script>
+<script>
+let _tt;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `show ${type}`;
+  clearTimeout(_tt); _tt = setTimeout(() => el.className='', 2600);
+}
+
+let allDays=[], filtered=[], expandedId=null;
+
+function renderStats(days) {
+  const totalKg  = days.reduce((s,d) => s + (d.kg_sum    || 0), 0);
+  const totalRev = days.reduce((s,d) => s + (d.price_sum || 0), 0);
+  document.getElementById('statDays').textContent    = days.length;
+  document.getElementById('statKg').textContent      = totalKg.toFixed(1) + ' kg';
+  document.getElementById('statRevenue').textContent = DB.formatNaira(totalRev);
+  document.getElementById('recordCount').textContent =
+    `${days.length} record${days.length !== 1 ? 's' : ''}`;
+  const footer = document.getElementById('totalFooter');
+  if (days.length) {
+    footer.style.display = '';
+    document.getElementById('totalRevenue').textContent = DB.formatNaira(totalRev);
+  } else {
+    footer.style.display = 'none';
+  }
+}
+
+function buildCard(d) {
+  const isToday    = d.date === DB.today();
+  const isExpanded = expandedId === d.id;
+  const card = document.createElement('div');
+  card.className = `day-card${isExpanded ? ' expanded' : ''}`;
+  card.dataset.id = d.id;
+
+  const todayTag  = isToday ? `<span class="today-badge">Today</span>` : '';
+  const unitLabel = d.unit_price > 0
+    ? `₦${Number(d.unit_price).toLocaleString('en-NG')}/kg` : '—';
+
+  let salesHtml = '';
+  if (isExpanded) {
+    const sales = DB.query(
+      'SELECT * FROM sales WHERE day_id=? AND kg>0 ORDER BY seq', [d.id]
+    );
+    if (sales.length) {
+      salesHtml = `<div class="dc-sales">${
+        sales.map(s => `
+          <div class="dc-sale-row">
+            <span class="sn">${s.seq}</span>
+            <span class="kg">${Number(s.kg).toFixed(2)} kg</span>
+            <span class="pr">${DB.formatNaira(s.price)}</span>
+            <span class="cmt">${s.comments || '—'}</span>
+          </div>`).join('')
+      }</div>`;
+    }
+  }
+
+  card.innerHTML = `
+    <div class="dc-head">
+      <div class="dc-head-left">
+        <span class="dc-date">${DB.formatDate(d.date)}${todayTag}</span>
+        <span class="dc-meta">${d.sale_count||0} entries · Stock: ${Number(d.opening_stock).toFixed(1)} kg</span>
+      </div>
+      <div class="dc-head-right">
+        <span class="dc-revenue">${DB.formatNaira(d.price_sum)}</span>
+        <span class="dc-kg-badge">${Number(d.kg_sum).toFixed(1)} kg sold</span>
+      </div>
+      <span class="dc-chevron">▾</span>
+    </div>
+    <div class="dc-detail">
+      <div class="dc-summary">
+        <div class="dc-sum-cell">
+          <div class="sum-label">Opening</div>
+          <div class="sum-val default">${Number(d.opening_stock).toFixed(2)} kg</div>
+        </div>
+        <div class="dc-sum-cell">
+          <div class="sum-label">Sold</div>
+          <div class="sum-val flame">${Number(d.kg_sum).toFixed(2)} kg</div>
+        </div>
+        <div class="dc-sum-cell">
+          <div class="sum-label">Balance</div>
+          <div class="sum-val green">${Number(d.balance).toFixed(2)} kg</div>
+        </div>
+      </div>
+      ${salesHtml}
+      <div class="dc-actions">
+        <span class="dc-unit-price">Unit: ${unitLabel}</span>
+        ${!isToday
+          ? `<button class="btn-sm btn-del" onclick="deleteDay(${d.id},event)">Delete</button>`
+          : ''}
+      </div>
+    </div>`;
+
+  card.addEventListener('click', e => {
+    if (e.target.closest('button')) return;
+    expandedId = expandedId === d.id ? null : d.id;
+    renderList();
+  });
+  return card;
+}
+
+function renderList() {
+  const list  = document.getElementById('dayList');
+  const empty = document.getElementById('emptyState');
+  list.innerHTML = '';
+  if (!filtered.length) { empty.style.display=''; return; }
+  empty.style.display = 'none';
+  filtered.forEach(d => list.appendChild(buildCard(d)));
+  renderStats(filtered);
+}
+
+let _st;
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(_st);
+  _st = setTimeout(() => {
+    const q = this.value.toLowerCase().trim();
+    filtered = !q ? [...allDays] : allDays.filter(d =>
+      DB.formatDate(d.date).toLowerCase().includes(q) || d.date.includes(q)
+    );
+    expandedId = null;
+    renderList();
+  }, 220);
+});
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  filtered=[...allDays]; expandedId=null; renderList();
+}
+
+async function deleteDay(id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this day and all its sales? This cannot be undone.')) return;
+  try {
+    await DBSales.deleteDay(id);
+    allDays  = allDays.filter(d => d.id !== id);
+    filtered = filtered.filter(d => d.id !== id);
+    expandedId = null;
+    renderList();
+    toast('Deleted', 'success');
+  } catch(err) {
+    toast('Delete failed', 'error');
+  }
+}
+
+async function init() {
+  try {
+    await DB.init({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`
+    });
+    allDays  = DBSales.getHistory();
+    filtered = [...allDays];
+    renderList();
+  } catch(e) {
+    document.getElementById('db-loader').querySelector('p').textContent =
+      'ERROR: ' + e.message;
+    return;
+  }
+  const loader = document.getElementById('db-loader');
+  loader.classList.add('hidden');
+  setTimeout(() => loader.remove(), 350);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Sales — Gnoke Gas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #f7f6f2;
+      --surface:    #ffffff;
+      --surface2:   #f0ede8;
+      --border:     #e2ddd8;
+      --text:       #1c1917;
+      --muted:      #a8a29e;
+      --flame:      #ea580c;
+      --flame-dim:  rgba(234,88,12,0.1);
+      --flame-glow: rgba(234,88,12,0.18);
+      --success:    #16a34a;
+      --danger:     #dc2626;
+      --danger-dim: rgba(220,38,38,0.1);
+      --radius:     6px;
+      --nav-h:      60px;
+      --font-mono:  'DM Mono', monospace;
+      --font-sans:  'DM Sans', sans-serif;
+    }
+
+    html { font-size: 15px; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding-bottom: calc(var(--nav-h) + 12px);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Background image ────────────────────────────────────────────── */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .bg-layer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center bottom;
+      opacity: 0.09;
+    }
+
+    /* Everything above the background */
+    .page-wrap { position: relative; z-index: 1; }
+
+    /* ── Page header ─────────────────────────────────────────────────── */
+    .page-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--flame);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .page-header h1 {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+    .header-date {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.8);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Unit price bar ──────────────────────────────────────────────── */
+    .unit-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .unit-bar label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .unit-price-input {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--flame);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 7px 10px;
+      width: 110px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .unit-price-input:focus { border-color: var(--flame); }
+    .unit-price-input::placeholder { color: var(--muted); }
+
+    .unit-bar-right {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+    }
+
+    button {
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border: none;
+      border-radius: var(--radius);
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    button:active { transform: scale(0.97); }
+
+    .btn-flame {
+      background: var(--flame);
+      color: #ffffff;
+    }
+    .btn-flame:hover { opacity: 0.88; }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); }
+
+    /* ── Sales table ─────────────────────────────────────────────────── */
+    .table-wrap {
+      padding: 10px 12px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    thead th {
+      background: var(--flame);
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 9px 10px;
+      text-align: left;
+    }
+    thead th:first-child { width: 36px; text-align: center; }
+    thead th.col-kg      { width: 80px; }
+    thead th.col-price   { width: 100px; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover      { background: var(--surface2); }
+    tbody tr.row-saving { background: rgba(234,88,12,0.04); }
+
+    tbody td {
+      padding: 4px 4px;
+      font-size: 0.85rem;
+    }
+    tbody td:first-child {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 4px 6px;
+    }
+
+    .cell-input {
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 8px 8px;
+      width: 100%;
+      border-radius: 3px;
+      transition: background 0.12s;
+      -webkit-appearance: none;
+    }
+    .cell-input:focus {
+      background: var(--flame-dim);
+    }
+    .cell-input::placeholder { color: var(--muted); font-size: 0.78rem; }
+
+    .cell-input.price-cell {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--success);
+      cursor: default;
+    }
+
+    /* Delete row button */
+    .del-row {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: 3px;
+      line-height: 1;
+      transition: color 0.12s, background 0.12s;
+    }
+    .del-row:hover { color: var(--danger); background: var(--danger-dim); }
+    .del-row:active { transform: scale(0.9); }
+
+    /* ── Summary bar ─────────────────────────────────────────────────── */
+    .summary-wrap {
+      padding: 0 12px 10px;
+    }
+
+    .summary-table {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .summary-table thead th {
+      font-size: 0.6rem;
+      padding: 8px 10px;
+      letter-spacing: 0.1em;
+    }
+    .summary-table tbody td {
+      padding: 10px 10px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: left;
+      border-right: 1px solid var(--border);
+    }
+    .summary-table tbody td:last-child { border-right: none; }
+
+    /* Stock input in summary */
+    .stock-input {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 80px;
+      padding: 0;
+      -webkit-appearance: none;
+    }
+    .stock-input:focus { color: var(--flame); }
+    .stock-input::placeholder { color: var(--muted); font-weight: 400; }
+
+    .summary-table .val-kg    { color: var(--text); }
+    .summary-table .val-price { color: var(--success); }
+    .summary-table .val-bal   { color: var(--flame); }
+    .summary-table .val-bal.low { color: var(--danger); }
+
+    /* ── Save indicator ──────────────────────────────────────────────── */
+    .save-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: opacity 0.3s;
+    }
+    .save-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+    }
+    .save-indicator.saving .save-dot { background: var(--flame); }
+    .save-indicator.saved  .save-dot { background: var(--success); }
+
+    /* ── Toast ───────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: calc(var(--nav-h) + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 18px;
+      font-size: 0.8rem;
+      color: var(--text);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    #toast.show   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.success { border-color: var(--success); color: var(--success); }
+    #toast.error   { border-color: var(--danger);  color: var(--danger); }
+
+    /* ── Bottom nav ──────────────────────────────────────────────────── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: stretch;
+      z-index: 20;
+    }
+    .bottom-nav a {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      gap: 3px;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: color 0.15s;
+      position: relative;
+    }
+    .bottom-nav a .nav-icon { font-size: 1.1rem; line-height: 1; }
+    .bottom-nav a:hover { color: var(--text); }
+    .bottom-nav a.active { color: var(--flame); }
+    .bottom-nav a.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 2px;
+      background: var(--flame);
+      border-radius: 0 0 3px 3px;
+    }
+
+    /* ── DB loader ───────────────────────────────────────────────────── */
+    #db-loader {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 200;
+      transition: opacity 0.3s;
+    }
+    #db-loader.hidden { opacity: 0; pointer-events: none; }
+    .loader-ring {
+      width: 34px; height: 34px;
+      border: 2px solid var(--border);
+      border-top-color: var(--flame);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #db-loader p {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Print styles ────────────────────────────────────────────────── */
+    @media print {
+      .bg-layer, .unit-bar-right, .bottom-nav,
+      #db-loader, #toast, .del-row, .save-indicator { display: none !important; }
+
+      body { padding: 0; background: white; }
+      .page-header {
+        background: #111 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .page-wrap { position: static; }
+
+      /* Company name in print header */
+      .print-company {
+        display: block !important;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.7);
+        letter-spacing: 0.08em;
+        margin-top: 2px;
+      }
+    }
+    .print-company { display: none; }
+  </style>
+   <link rel="stylesheet" href="styles/global.css"> 
+
+</head>
+<body>
+
+<!-- DB loader -->
+<div id="db-loader">
+  <div class="loader-ring"></div>
+  <p>LOADING...</p>
+</div>
+
+<!-- Background -->
+<div class="bg-layer">
+  <img src="assets/bg2.webp" alt="" aria-hidden="true" />
+</div>
+
+<div class="page-wrap">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Sales</h1>
+      <span class="print-company" id="printCompany"></span>
+    </div>
+    <span class="header-date" id="headerDate"></span>
+  </header>
+
+  <!-- Unit price bar -->
+  <div class="unit-bar">
+    <label for="unitPrice">1 Unit =</label>
+    <input type="number"
+           id="unitPrice"
+           class="unit-price-input"
+           placeholder="Price"
+           inputmode="numeric"
+           min="0"
+           step="0.01" />
+    <div class="unit-bar-right">
+      <button class="btn-ghost" id="resetBtn">Reset</button>
+      <button class="btn-flame" onclick="window.print()">Print</button>
+    </div>
+  </div>
+
+  <!-- Sales table -->
+  <div class="table-wrap">
+    <table id="salesTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th class="col-kg">KG</th>
+          <th class="col-price">Price</th>
+          <th>Comments</th>
+          <th style="width:32px"></th>
+        </tr>
+      </thead>
+      <tbody id="salesBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Save indicator -->
+  <div class="save-indicator" id="saveIndicator">
+    <span class="save-dot"></span>
+    <span id="saveLabel">All saved</span>
+  </div>
+
+  <!-- Summary bar -->
+  <div class="summary-wrap">
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Stock</th>
+          <th>KG Sold</th>
+          <th>Revenue</th>
+          <th>Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <input type="number"
+                   id="openingStock"
+                   class="stock-input"
+                   placeholder="0"
+                   inputmode="numeric"
+                   min="0"
+                   step="0.01" />
+          </td>
+          <td class="val-kg"   id="kgSum">0.00</td>
+          <td class="val-price" id="priceSum">₦0</td>
+          <td class="val-bal"  id="balance">0.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- end page-wrap -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <a href="sales.html" class="active">
+    <span class="nav-icon">🛒</span>Sales
+  </a>
+  <a href="history.html">
+    <span class="nav-icon">◷</span>History
+  </a>
+  <a href="help.html">
+    <span class="nav-icon">⚙</span>Help
+  </a>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<script src="scripts/db-core.js"></script>
+<script src="scripts/db-sales.js"></script>
+<script>
+
+/* ── Toast ──────────────────────────────────────────────────────── */
+let _tt;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.className = '', 2600);
+}
+
+/* ── Save indicator ─────────────────────────────────────────────── */
+function setSaving() {
+  const el = document.getElementById('saveIndicator');
+  el.className = 'save-indicator saving';
+  document.getElementById('saveLabel').textContent = 'Saving…';
+}
+function setSaved() {
+  const el = document.getElementById('saveIndicator');
+  el.className = 'save-indicator saved';
+  document.getElementById('saveLabel').textContent = 'All saved';
+  setTimeout(() => el.className = 'save-indicator', 2000);
+}
+
+/* ── State ──────────────────────────────────────────────────────── */
+let today     = null;   // day row from DB
+let unitPrice = 0;
+
+/* ── Totals ─────────────────────────────────────────────────────── */
+function refreshTotals() {
+  if (!today) return;
+  const t = DBSales.getDayTotals(today.id);
+  document.getElementById('kgSum').textContent    = t.kg_sum.toFixed(2);
+  document.getElementById('priceSum').textContent = DB.formatNaira(t.price_sum);
+
+  const balEl = document.getElementById('balance');
+  balEl.textContent = t.balance.toFixed(2);
+  balEl.className   = `val-bal${t.balance < 10 ? ' low' : ''}`;
+}
+
+/* ── Render row ─────────────────────────────────────────────────── */
+function buildRow(sale) {
+  const tr = document.createElement('tr');
+  tr.dataset.id = sale.id;
+
+  const price = sale.price > 0 ? sale.price.toFixed(2) : '';
+
+  tr.innerHTML = `
+    <td>${sale.seq}</td>
+    <td><input class="cell-input kg-input"
+               type="number" min="0" step="0.01"
+               inputmode="decimal"
+               value="${sale.kg || ''}"
+               placeholder="0" /></td>
+    <td><input class="cell-input price-cell"
+               readonly
+               tabindex="-1"
+               value="${price}"
+               placeholder="—" /></td>
+    <td><input class="cell-input comment-input"
+               type="text"
+               value="${sale.comments || ''}"
+               placeholder="Comments" /></td>
+    <td><button class="del-row" title="Remove row">✕</button></td>`;
+
+  const kgInput  = tr.querySelector('.kg-input');
+  const priceIn  = tr.querySelector('.price-cell');
+  const commentIn = tr.querySelector('.comment-input');
+  const delBtn   = tr.querySelector('.del-row');
+
+  // KG input — recalc price, debounce save
+  kgInput.addEventListener('input', () => {
+    const kg = parseFloat(kgInput.value) || 0;
+    const p  = kg * unitPrice;
+    priceIn.value = kg > 0 ? p.toFixed(2) : '';
+    refreshTotals();
+    debounceSave(sale.id, tr);
+    ensureEmptyRow();
+  });
+
+  // Comments — debounce save
+  commentIn.addEventListener('input', () => {
+    debounceSave(sale.id, tr);
+    ensureEmptyRow();
+  });
+
+  // Delete row
+  delBtn.addEventListener('click', async () => {
+    if (!confirm('Remove this entry?')) return;
+    tr.style.opacity = '0.4';
+    try {
+      await DBSales.deleteSale(sale.id, today.id);
+      tr.remove();
+      resequenceDom();
+      refreshTotals();
+    } catch (e) {
+      tr.style.opacity = '1';
+      toast('Delete failed', 'error');
+    }
+  });
+
+  return tr;
+}
+
+/* ── Render all rows ────────────────────────────────────────────── */
+function renderRows(sales) {
+  const tbody = document.getElementById('salesBody');
+  tbody.innerHTML = '';
+  sales.forEach(s => tbody.appendChild(buildRow(s)));
+  // Always ensure at least one empty row
+  ensureEmptyRow();
+}
+
+/* ── Ensure trailing empty row ──────────────────────────────────── */
+async function ensureEmptyRow() {
+  const rows = document.querySelectorAll('#salesBody tr');
+  if (!rows.length) {
+    await addEmptyRow();
+    return;
+  }
+  const last     = rows[rows.length - 1];
+  const lastKg   = last.querySelector('.kg-input').value.trim();
+  const lastCmt  = last.querySelector('.comment-input').value.trim();
+  if (lastKg || lastCmt) {
+    await addEmptyRow();
+  }
+}
+
+async function addEmptyRow() {
+  if (!today) return;
+  try {
+    const { id, seq } = await DBSales.addSale(today.id, { kg: 0, price: 0, comments: '' });
+    const tr = buildRow({ id, seq, kg: 0, price: 0, comments: '' });
+    document.getElementById('salesBody').appendChild(tr);
+  } catch (e) {
+    console.error('addEmptyRow:', e);
+  }
+}
+
+/* ── Resequence DOM seq numbers ─────────────────────────────────── */
+function resequenceDom() {
+  document.querySelectorAll('#salesBody tr').forEach((tr, i) => {
+    tr.cells[0].textContent = i + 1;
+  });
+}
+
+/* ── Debounced save ─────────────────────────────────────────────── */
+const _saveTimers = {};
+function debounceSave(saleId, tr) {
+  clearTimeout(_saveTimers[saleId]);
+  setSaving();
+  _saveTimers[saleId] = setTimeout(async () => {
+    const kg       = parseFloat(tr.querySelector('.kg-input').value) || 0;
+    const price    = kg * unitPrice;
+    const comments = tr.querySelector('.comment-input').value.trim();
+    try {
+      tr.classList.add('row-saving');
+      await DBSales.updateSale(saleId, { kg, price, comments });
+      tr.querySelector('.price-cell').value = kg > 0 ? price.toFixed(2) : '';
+      tr.classList.remove('row-saving');
+      refreshTotals();
+      setSaved();
+    } catch (e) {
+      tr.classList.remove('row-saving');
+      toast('Save failed', 'error');
+    }
+  }, 600);
+}
+
+/* ── Unit price change ──────────────────────────────────────────── */
+let _upTimer;
+document.getElementById('unitPrice').addEventListener('input', function () {
+  unitPrice = parseFloat(this.value) || 0;
+  // Immediately recalc all price cells in DOM
+  document.querySelectorAll('#salesBody tr').forEach(tr => {
+    const kg = parseFloat(tr.querySelector('.kg-input').value) || 0;
+    const priceIn = tr.querySelector('.price-cell');
+    priceIn.value = kg > 0 ? (kg * unitPrice).toFixed(2) : '';
+  });
+  refreshTotals();
+  // Persist to DB after pause
+  clearTimeout(_upTimer);
+  setSaving();
+  _upTimer = setTimeout(async () => {
+    try {
+      await DBSales.updateUnitPrice(today.id, unitPrice);
+      setSaved();
+    } catch (e) {
+      toast('Save failed', 'error');
+    }
+  }, 700);
+});
+
+/* ── Opening stock change ───────────────────────────────────────── */
+let _stockTimer;
+document.getElementById('openingStock').addEventListener('input', function () {
+  refreshTotals();
+  clearTimeout(_stockTimer);
+  setSaving();
+  _stockTimer = setTimeout(async () => {
+    const val = parseFloat(this.value) || 0;
+    try {
+      await DBSales.updateOpeningStock(today.id, val);
+      refreshTotals();
+      setSaved();
+    } catch (e) {
+      toast('Save failed', 'error');
+    }
+  }, 700);
+});
+
+/* ── Reset ──────────────────────────────────────────────────────── */
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Clear all entries for today? This cannot be undone.')) return;
+  document.querySelectorAll('#salesBody tr').forEach(tr => {
+    tr.querySelector('.kg-input').value     = '';
+    tr.querySelector('.price-cell').value   = '';
+    tr.querySelector('.comment-input').value = '';
+  });
+  refreshTotals();
+  toast('Entries cleared', '');
+});
+
+/* ── Init ───────────────────────────────────────────────────────── */
+async function init() {
+  try {
+    await DB.init({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`
+    });
+
+    // Today's date in header
+    document.getElementById('headerDate').textContent =
+      DB.formatDate(DB.today());
+
+    // Get or create today's day record
+    today     = DBSales.getOrCreateToday();
+    unitPrice = today.unit_price || 0;
+
+    // Populate unit price and opening stock fields
+    if (unitPrice > 0)
+      document.getElementById('unitPrice').value = unitPrice;
+
+    document.getElementById('openingStock').value =
+      today.opening_stock > 0 ? today.opening_stock : '';
+
+    // Load company for print header
+    const company = DBSales.getCompany();
+    if (company?.name)
+      document.getElementById('printCompany').textContent = company.name;
+
+    // Load today's sales
+    const sales = DBSales.getSalesForDay(today.id);
+    renderRows(sales);
+    refreshTotals();
+
+  } catch (e) {
+    document.getElementById('db-loader').querySelector('p').textContent =
+      'ERROR: ' + e.message;
+    return;
+  }
+
+  const loader = document.getElementById('db-loader');
+  loader.classList.add('hidden');
+  setTimeout(() => loader.remove(), 350);
+}
+
+init();
+</script>
+</body>
+</html>
